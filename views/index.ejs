@@ -5,7 +5,59 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
+    <header>
+        <div class="logoWrapper">
+            <img class="d-block mx-auto mb-4" src="/images/nira.png" alt="logo">
+        </div>
+        <% if(user) {%>
+            <div class="navbarLoged">
+                <div class="navItem">Logged in as:</div>
+                <div class="navItem"><%= user.firstname %> </div>
+                <a type="button" class="btnLink" href="/login">Log out</a>
+                <a type="button" class="btnLink" href="/member">Exclusive Club</a>
+            </div>
+            <% } else {%>
+        <a type="button" class="btnLink" href="/login">Log In</a>
+        <a type="button" class="btnLink" href="/signup">Sign Up</a>
+        <% } %>
+    </header>
+
+    <main class="mainBody">
+        
+        <h1 class="coloredText">MembersOnly</h1>
+        <section>
+            
+
+            <% if(user) { %>
+                <div class="sectionHeader">
+                    <a type="button" class="btnLink msgButton" href="/message">Post Message</a>
+                </div>
+                <section class="sectionMessages">
+                    <% for(let i=0;i<posts.length;i++) { %>
+                        <div class="postWrapper">
+                            <% if(posts[i].firstname){ %>
+                                <div class="moreInfo">
+                                    <span><%= posts[i].firstname %></span>
+                                    <span><%= posts[i].lastname %></span>
+                                    <span><%= posts[i].timestamp %></span>
+                                </div>
+                            <% } %>
+                            <div class="postTitle"><%= posts[i].title %></div>
+                            <div class="postMessage"><%= posts[i].message %></div>
+                        </div>
+                    <% } %>
+                </section>
+                
+            <% } else { %>
+                <div class="logoWrapper2">
+                    <img class="d-block mx-auto mb-4" src="/images/nira.png" alt="logo">
+                </div>
+                <div class="sectionHeader coloredText">Log in or sign up to view the message board.</div>
+
+            <% } %>
+        </section>
+    </main>
+    <script>
+    </script>
   </body>
 </html>

@@ -1,0 +1,23 @@
+npm install -g express-generator
+express --view=ejs
+npm install
+npm install nodemon
+change script in package.json: 
+"dev": "nodemon ./bin/www -e js,ejs,html,css"
+npm run dev
+
+Environement variables:
+create .env file
+MYKEY=someText; ==> for Mongo URL, type it WITHOUT QUOTES!! && WITHOUT SEMICOLON, AAAARG!!
+
+in app.js:
+require('dotenv').config()
+
+npm install mongoose
+npm install express-session
+npm install passport passport-local
+npm install bcryptjs
+
+To link images to the public folder:
+src="/images/nira.png"
+
