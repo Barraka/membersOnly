@@ -98,22 +98,26 @@ app.use(passport.session());
 
 
 // Routes
-// app.use('/', indexRouter);
-app.get('/', async function(req, res, next) {
-    let user=req.user;
-    if(!user)user=req.session.user;
-    console.log('user: ', user);
-    let posts=undefined;
-    posts = await Message.find({});
+// app.get('/', async function(req, res, next) {
+//     let user=req.user;
+//     if(!user)user=req.session.user;
+//     console.log('user: ', user);
+//     let posts=undefined;
+//     posts = await Message.find({});
 
-    if(user && !user.member)posts.forEach(x=> {
-        x.firstname=undefined;
-        x.lastname=undefined;
-        x.timestamp=undefined;
-        x.email=undefined;
-        x._id=undefined;
-    });
-    res.render('index', { title: 'MembersOnly', user: user, posts: posts });
+//     if(user && !user.member)posts.forEach(x=> {
+//         x.firstname=undefined;
+//         x.lastname=undefined;
+//         x.timestamp=undefined;
+//         x.email=undefined;
+//         x._id=undefined;
+//     });
+//     res.render('index', { title: 'MembersOnly', user: user, posts: posts });
+// });
+
+app.get('/', async function(req, res, next) {
+
+    res.render('index', { title: 'MembersOnly', user: undefined, posts: undefined });
 });
 
 
