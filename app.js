@@ -10,8 +10,7 @@ const CookieStrategy = require("passport-cookie");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
-const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
+const MongoStore = require('connect-mongo')(session);
 
 
 //Mongo connection
@@ -90,7 +89,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({ secret: "cats", cookie: { maxAge: 864000000 }, rolling: true, resave: true, saveUninitialized: false }));
+app.use(session({ secret: "cats", store: new MongoStore(options), cookie: { maxAge: 864000000 }, rolling: true, resave: true, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -113,7 +112,7 @@ app.get('/', async function(req, res, next) {
     });
     res.render('index', { title: 'MembersOnly', user: user, posts: posts });
 });
-app.use('/users', usersRouter);
+
 
 // Signup
 app.get('/signup', (req, res, next) => {
