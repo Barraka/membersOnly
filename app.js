@@ -6,11 +6,23 @@ const cookieParser = require('cookie-parser');
 const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
+const CookieStrategy = require("passport-cookie");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
+const livereload = require("livereload");
+const connectLiveReload = require("connect-livereload");
+
+//Live reload
+const liveReloadServer = livereload.createServer();
+liveReloadServer.server.once("connection", () => {
+  setTimeout(() => {
+    liveReloadServer.refresh("/");
+  }, 100);
+});
+
 
 //Mongo connection
 const mongoDb=process.env.MONGODB;
@@ -67,6 +79,7 @@ passport.use(
 
     })
 );
+
 passport.serializeUser(function(user, cb) {
     process.nextTick(function() {
         cb(null, {id: user.id, email: user.username, firstname:user.firstname, lastname:user.lastname, member:user.member, admin:user.admin});
@@ -80,6 +93,7 @@ passport.deserializeUser(function(user, cb) {
 });
 
 const app = express();
+app.use(connectLiveReload());
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -87,16 +101,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({ secret: "cats", cookie: { maxAge: 60000 }, rolling: true, resave: true, saveUninitialized: false }));
+app.use(session({ secret: "cats", cookie: { maxAge: 864000000 }, rolling: true, resave: true, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
+
 
 // Routes
 // app.use('/', indexRouter);
 app.get('/', async function(req, res, next) {
-    const user=req.user;
+    let user=req.user;
+    if(!user)user=req.session.user;
+    console.log('user: ', user);
     let posts=undefined;
-    if(user)posts = await Message.find({});
+    posts = await Message.find({});
+
     if(user && !user.member)posts.forEach(x=> {
         x.firstname=undefined;
         x.lastname=undefined;
@@ -110,29 +128,72 @@ app.use('/users', usersRouter);
 
 // Signup
 app.get('/signup', (req, res, next) => {
-    res.render('signup', { title: 'Sign up' });
+    let isTaken=false;
+    if(req.isTaken)isTaken=true;
+    console.log('req.isTaken: ', req.isTaken);
+    res.render('signup', { title: 'Sign up', isTaken:false });
   });
-app.post("/signup", (req, res, next) => {
-    bcrypt.hash(req.body.password, 10, (err, hashed) => {
-        if(err) {
-            console.error('error');
-            return next(err);
+// app.post("/signup", (req, res, next) => {
+//     bcrypt.hash(req.body.password, 10, async (err, hashed) => {
+//         if(err) {
+//             console.error('error');
+//             return next(err);
+//         }
+//         //Check if email already in use
+//         const isTaken = await User.findOne({username: req.body.email}).exec()
+//         if(isTaken) {
+//             res.locals.isTaken=true;
+//             res.redirect('/signup');
+//         } else {
+//             const user = new User({
+//                 firstname: req.body.firstName,
+//                 lastname: req.body.lastName,
+//                 username: req.body.email,
+//                 password: hashed,
+//                 member: false,
+//                 admin: false,
+//             }).save()
+//             .then(user=> {
+//                 req.session.context=user;
+//                 res.redirect('/');
+//                 next();
+//             });
+//         }
+        
+//     })
+// });
+app.post("/signup", checkSignup, emailTaken);
+
+async function checkSignup(req, res, next) {
+    const isTaken = await User.findOne({username: req.body.email}).exec()
+        if(isTaken) {
+            return next();
+        } else {
+            bcrypt.hash(req.body.password, 10, async (err, hashed) => {
+                if(err) {
+                    console.error('error');
+                    return next(err);
+                }
+                const user = new User({
+                    firstname: req.body.firstName,
+                    lastname: req.body.lastName,
+                    username: req.body.email,
+                    password: hashed,
+                    member: false,
+                    admin: false,
+                }).save()
+                .then(user=> {
+                    console.log('user after signup: ', user);
+                    req.session.user=user;
+                    res.redirect('/');
+                    // next();
+                });
+            });            
         }
-        const user = new User({
-            firstname: req.body.firstName,
-            lastname: req.body.lastName,
-            username: req.body.email,
-            password: hashed,
-            member: false,
-            admin: false,
-        }).save()
-        .then(user=> {
-            req.session.context=user;
-            res.redirect('/');
-            next();
-        });
-    })
-});
+}
+function emailTaken(req, res, next) {
+    res.render('signup', { title: 'Sign up', isTaken:true });
+}
 // Log in
 app.get('/login', (req, res, next) => {
     res.render('login', { title: 'Log In' });
@@ -142,10 +203,17 @@ app.post('/login', passport.authenticate('local', {
     failureMessage: true,
     }),
     (req, res, next) => {
-        req.session.context=req.user;
+        req.session.user=req.user;
         res.redirect('/');
     }
 );
+// Log out
+app.get('/logout', (req, res, next) => {
+    req.session.destroy(e=> {
+        if(e)return next(e);
+        res.redirect('/');
+    });
+  });
 //Post message
 app.get('/message', (req, res, next) => {
     res.render('message', { title: 'New Post' });
@@ -175,19 +243,44 @@ app.post('/message', isLoggedIn, (req, res, next) => {
 });
 function isLoggedIn(req, res, next) {
     if(req.isAuthenticated())return next();
+    if(req.session.user)return next();
     res.redirect('/');
 }
  //Members
  app.get('/member',isLoggedIn, (req, res, next) => {
-    const isMemeber=req.user.member;
-    res.render('member', { title: 'Exclusive Club', member: isMemeber });
+    const isMember=req.session.user.member;
+    res.render('member', { title: 'Exclusive Club', member: isMember });
 });
+
+
+app.post('/member', isLoggedIn, async (req, res, next) => {
+    const answer=req.body.member.toLowerCase();
+    if(answer==='the odin project' || answer==='top') {
+        //success
+        const user = req.user;
+        user.member=true;
+        const findUser = await User.findOne({username:user.email}).exec();
+        findUser.member=true;
+        findUser.save();
+        res.render('member', { title: 'Exclusive Club', member: true });
+        
+    } else {
+        res.render('member', { title: 'Exclusive Club', member: false, wrong:true });
+    }
+});
+
+app.delete("/deletePost", isLoggedIn, async (req, res, next) => {
+    if(!req.session.user.admin)return next();
+    console.log('In delete post, ', req.body);
+    await Message.deleteOne({_id:req.body.value});
+    res.redirect('/');
+});
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
-});
-
+    next(createError(404));
+  });
 // error handler
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
@@ -198,5 +291,6 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
 
 module.exports = app;

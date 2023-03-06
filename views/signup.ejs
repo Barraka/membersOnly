@@ -42,6 +42,21 @@
                 <button type="submit" class="btnLink">Submit</button>
             </form>
         </section>
+        <% if(isTaken) { %>
+            <div class="modalWrapper">
+                <div class="modalInner">
+                    <div class="modalTitle">Email already in use</div>
+                    <button class="btnLink" onclick="closeModal()">OK</button>
+                </div>
+                <div class="backdrop"></div>
+            </div>
+        <% } %>
     </main>
   </body>
+  <script>
+    function closeModal() {
+        const modalWrapper = document.querySelector('.modalWrapper');
+        modalWrapper.remove();
+    }
+  </script>
 </html>

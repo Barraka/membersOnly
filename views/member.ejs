@@ -23,7 +23,7 @@
                 </div>
             <% } else { %>
                 <div class="memberText">
-                    Only those who can answer this riddle are worthy of joining the Elite Club of MembersOnly.
+                    <div class="memberTitle">Only those who can answer this riddle are worthy of joining the Elite Club of MembersOnly.</div>
 
                     <form action="/member" method="post">
 
@@ -33,13 +33,29 @@
                         </div>
         
 
-                        <button type="submit" class="btnLink">Log In</button>
+                        <button type="submit" class="btnLink">Submit</button>
                     </form>
 
+                </div>
+            <% } %>
+
+            <% if(locals.wrong) { %>
+                <div class="modalWrapper">
+                    <div class="modalInner">
+                        <div class="modalTitle">Nope, wrong answer!</div>
+                        <button class="btnLink" onclick="closeModal()">OK</button>
+                    </div>
+                    <div class="backdrop"></div>
                 </div>
             <% } %>
             
         </section>
     </main>
+    <script>
+        function closeModal() {
+            const modalWrapper = document.querySelector('.modalWrapper');
+            modalWrapper.remove();
+        }
+      </script>
   </body>
 </html>
