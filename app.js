@@ -12,16 +12,6 @@ const Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
-const livereload = require("livereload");
-const connectLiveReload = require("connect-livereload");
-
-//Live reload
-const liveReloadServer = livereload.createServer();
-liveReloadServer.server.once("connection", () => {
-  setTimeout(() => {
-    liveReloadServer.refresh("/");
-  }, 100);
-});
 
 
 //Mongo connection
@@ -93,7 +83,6 @@ passport.deserializeUser(function(user, cb) {
 });
 
 const app = express();
-app.use(connectLiveReload());
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
