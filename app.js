@@ -10,7 +10,7 @@ const CookieStrategy = require("passport-cookie");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
-const MongoStore = require('connect-mongo')(session);
+const MongoStore = require('connect-mongo');
 
 
 //Mongo connection
